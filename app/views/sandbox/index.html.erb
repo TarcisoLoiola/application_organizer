@@ -1,0 +1,648 @@
+<div id="ftrc-oop-calculator"></div>
+
+<style type="text/css">
+  #ftrc-oop-calculator {
+    display: block;
+    width: 300px;
+    padding: 20px;
+    margin: 40px auto;
+    border: 1px solid #000000;
+  }
+  .ftrc-errors {
+    color: red;
+  }
+  .ftrc-form-row {
+    display: block;
+    width: 100%;
+    margin: 0 0 20px 0;
+  }
+  .ftrc-form-row-label {
+    display: block;
+    width: 100%;
+    margin: 0 0 5px 0;
+  }
+  .ftrc-form-row-input-select,
+  .ftrc-form-row-input-text {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+</style>
+
+<script type="text/babel">
+
+  class OopCalculator extends React.Component {
+
+    constructor(props) {
+      super(props);
+      this.state = {
+        // tuition: "",
+        // boarding: "",
+        // activities: "",
+        // heathcare: "",
+        // travel: "",
+        // other: "",
+        // yearsAttending: "",
+        // repaymentYears: "",
+        // scholarships: "",
+        // loans: "",
+        // interest: "",
+        tuition: 15000,
+        boarding: 1000,
+        activities: 1000,
+        heathcare: 1000,
+        travel: 1000,
+        other: 1000,
+        yearsAttending: 4,
+        repaymentYears: 5,
+        scholarships: 4000,
+        loans: 15000,
+        interest: 4.5,
+        expenses: null,
+        remainder: null,
+        repaymentSchedule: {},
+        errors: [],
+      };
+      this.updateOopCalculatorField = this.updateOopCalculatorField.bind(this);
+      this.outputOopCalculation = this.outputOopCalculation.bind(this);
+      this.renderRepaymentSchedule = this.renderRepaymentSchedule.bind(this);
+      this.renderExpenses = this.renderExpenses.bind(this);
+      this.renderRemainder = this.renderRemainder.bind(this);
+      this.renderErrors = this.renderErrors.bind(this);
+    }
+
+    renderErrors() {
+      let errors = [];
+      for ( let i=0; i < this.state.errors.length; i++ ) {
+        errors.push(<li key={"error-" + i}>{this.state.errors[i]}</li>);
+      }
+      return errors;
+    }
+
+    updateOopCalculatorField(key, value) {
+      let newState = { ...this.state };
+      newState[key] = value;
+      this.setState(newState);
+    }
+
+    validateNumber(value) {
+      if ( !isNaN(parseFloat(value)) && isFinite(value) ) {
+        return true;
+      }
+      else {
+        return false;
+      }
+    }
+
+    validatePresence(value) {
+      if ( value !== "" && value !== null && value !== undefined ) {
+        return true;
+      }
+      else {
+        return false;
+      }
+    }
+
+    calculateCompoundingInterest(loanAmount, yearsAttendingAmount, interestAmount, repaymentYearsAmount, periodAmount) {
+      let principal = loanAmount * yearsAttendingAmount;
+      let interestRate = interestAmount / 100;
+      let years = repaymentYearsAmount;
+      return (principal * Math.pow(1 + (interestRate/periodAmount), periodAmount * years));
+    }
+
+    outputOopCalculation() {
+      let newState = { ...this.state };
+      newState.errors = [];
+
+      let formIsValid = true;
+
+      if ( !this.validatePresence(newState.tuition) ) {
+        formIsValid = false;
+        newState.errors.push("Tuition value must be provided.");
+      }
+      if ( !this.validateNumber(newState.tuition) ) {
+        formIsValid = false;
+        newState.errors.push("Tuition value must be a number value.");
+      }
+      if ( !this.validatePresence(newState.boarding) ) {
+        formIsValid = false;
+        newState.errors.push("Room and board value must be provided.");
+      }
+      if ( !this.validateNumber(newState.boarding) ) {
+        formIsValid = false;
+        newState.errors.push("Room and board value must be a number value.");
+      }
+      if ( !this.validatePresence(newState.activities) ) {
+        formIsValid = false;
+        newState.errors.push("Activities fee value must be provided.");
+      }
+      if ( !this.validateNumber(newState.activities) ) {
+        formIsValid = false;
+        newState.errors.push("Activities fee value must be a number value.");
+      }
+      if ( !this.validatePresence(newState.heathcare) ) {
+        formIsValid = false;
+        newState.errors.push("Healthcare feee value must be provided.");
+      }
+      if ( !this.validateNumber(newState.heathcare) ) {
+        formIsValid = false;
+        newState.errors.push("Healthcare feee value must be a number value.");
+      }
+      if ( !this.validatePresence(newState.travel) ) {
+        formIsValid = false;
+        newState.errors.push("Travel expenses value must be provided.");
+      }
+      if ( !this.validateNumber(newState.travel) ) {
+        formIsValid = false;
+        newState.errors.push("Travel expenses value must be a number value.");
+      }
+      if ( !this.validatePresence(newState.other) ) {
+        formIsValid = false;
+        newState.errors.push("Other expenditures value must be provided.");
+      }
+      if ( !this.validateNumber(newState.other) ) {
+        formIsValid = false;
+        newState.errors.push("Other expenditures value must be a number value.");
+      }
+      if ( !this.validatePresence(newState.yearsAttending) ) {
+        formIsValid = false;
+        newState.errors.push("Years attending value must be provided.");
+      }
+      if ( !this.validatePresence(newState.repaymentYears) ) {
+        formIsValid = false;
+        newState.errors.push("Years repayment value must be provided.");
+      }
+      if ( !this.validatePresence(newState.scholarships) ) {
+        formIsValid = false;
+        newState.errors.push("Scholarships value must be provided.");
+      }
+      if ( !this.validateNumber(newState.scholarships) ) {
+        formIsValid = false;
+        newState.errors.push("Scholarships value must be a number value.");
+      }
+      if ( !this.validatePresence(newState.loans) ) {
+        formIsValid = false;
+        newState.errors.push("Loans value must be provided.");
+      }
+      if ( !this.validateNumber(newState.loans) ) {
+        formIsValid = false;
+        newState.errors.push("Loans value must be a number value.");
+      }
+      if ( !this.validatePresence(newState.interest) ) {
+        formIsValid = false;
+        newState.errors.push("Interest value must be provided.");
+      }
+      if ( !this.validateNumber(newState.interest) ) {
+        formIsValid = false;
+        newState.errors.push("Interest value must be a number value.");
+      }
+
+      if ( !formIsValid ) {
+        this.setState(newState);
+        return;
+      }
+
+      let tuition = parseInt(newState.tuition);
+      let boarding = parseInt(newState.boarding);
+      let activities = parseInt(newState.activities);
+      let heathcare = parseInt(newState.heathcare);
+      let travel = parseInt(newState.travel);
+      let other = parseInt(newState.other);
+      let scholarships = parseInt(newState.scholarships);
+      let loans = parseInt(newState.loans);
+      newState.expenses = tuition + boarding + activities + heathcare + travel + other;
+      newState.remainder = tuition + boarding + activities + heathcare + travel + other - (scholarships + loans);
+
+      newState.repaymentSchedule = {};
+      for( let i=0; i < newState.repaymentYears; i++) {
+        newState.repaymentSchedule[i + 1] = this.calculateCompoundingInterest(newState.loans, newState.yearsAttending, newState.interest, newState.repaymentYears, 365);
+      }
+      console.log(newState);
+      this.setState(newState);
+    }
+
+    renderRepaymentSchedule() {
+      let repaymentMarkup = [];
+      for (let key in this.state.repaymentSchedule) {
+        repaymentMarkup.push(
+          <tr key={"repayment" + key}>
+            <td>Year {key}</td>
+            <td>{(this.state.repaymentSchedule[key] / Object.keys(this.state.repaymentSchedule).length).toLocaleString("en-US", {style:"currency", currency:"USD"})}</td>
+          </tr>
+        );
+      }
+      return repaymentMarkup;
+    }
+
+    renderExpenses() {
+      // if (
+      //   this.state.tuition &&
+      //   this.state.boarding &&
+      //   this.state.activities &&
+      //   this.state.heathcare &&
+      //   this.state.travel &&
+      //   this.state.other
+      // ) {
+      if (this.state.expenses) {
+        return (
+          <div className="ftrc-form-row">
+            <div>Yearly Total Expenses:</div>
+            {this.state.expenses.toLocaleString("en-US", {style:"currency", currency:"USD"})}
+          </div>
+        );
+      }
+    }
+
+    renderRemainder() {
+      // if (
+      //   this.state.tuition &&
+      //   this.state.boarding &&
+      //   this.state.activities &&
+      //   this.state.heathcare &&
+      //   this.state.travel &&
+      //   this.state.other &&
+      //   this.state.loans &&
+      //   this.state.scholarships
+      // ) {
+      if (this.state.remainder) {
+        return (
+          <div className="ftrc-form-row">
+            <div>Yearly Out-of-Pocket Remainder:</div>
+            {this.state.remainder.toLocaleString("en-US", {style:"currency", currency:"USD"})}
+          </div>
+        );
+      }
+    }
+
+    render() {
+      return(
+        <div>
+
+          {
+            this.state.errors.length > 0 ?
+            <div className="ftrc-errors">
+              <h4>Errors:</h4>
+              <ul>{this.renderErrors()}</ul>
+            </div> :
+            null
+          }
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Base Tuition:</label>
+            <input
+              className="ftrc-form-row-input-text"
+              type="text"
+              value={this.state.tuition}
+              placeholder="Input annual base tuition ..."
+              onChange={(e) => this.updateOopCalculatorField("tuition", e.target.value)} />
+          </div>
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Room &amp; Board:</label>
+            <input
+              className="ftrc-form-row-input-text"
+              type="text"
+              value={this.state.boarding}
+              placeholder="Input room & board fee ..."
+              onChange={(e) => this.updateOopCalculatorField("boarding", e.target.value)} />
+          </div>
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Activities Fee:</label>
+            <input
+              className="ftrc-form-row-input-text"
+              type="text"
+              value={this.state.activities}
+              placeholder="Input activites fee ..."
+              onChange={(e) => this.updateOopCalculatorField("activities", e.target.value)} />
+          </div>
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Healthcare Fee:</label>
+            <input
+              className="ftrc-form-row-input-text"
+              type="text"
+              value={this.state.heathcare}
+              placeholder="Input healthcare fee ..."
+              onChange={(e) => this.updateOopCalculatorField("heathcare", e.target.value)} />
+          </div>
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Travel Expenses:</label>
+            <input
+              className="ftrc-form-row-input-text"
+              type="text"
+              value={this.state.travel}
+              placeholder="Input travel expenses ..."
+              onChange={(e) => this.updateOopCalculatorField("travel", e.target.value)} />
+          </div>
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Other Expenditures:</label>
+            <input
+              className="ftrc-form-row-input-text"
+              type="text"
+              value={this.state.other}
+              placeholder="Input any other related expenditures ..."
+              onChange={(e) => this.updateOopCalculatorField("other", e.target.value)} />
+          </div>
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Number of Years Attending:</label>
+            <select
+              className="ftrc-form-row-input-select"
+              value={this.state.yearsAttending}
+              onChange={(e) => this.updateOopCalculatorField("yearsAttending", e.target.value)}>
+              <option disabled defaultValue value={""}>Select the number of years you plan to attend college ...</option>
+              <option value={1}>1 Year</option>
+              <option value={2}>2 Years</option>
+              <option value={3}>3 Years</option>
+              <option value={4}>4 Years</option>
+              <option value={5}>5 Years</option>
+              <option value={6}>6 Years</option>
+            </select>
+          </div>
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Repayment Schedule:</label>
+            <select
+              className="ftrc-form-row-input-select"
+              value={this.state.repaymentYears}
+              onChange={(e) => this.updateOopCalculatorField("repaymentYears", e.target.value)}>
+              <option disabled defaultValue value={""}>Select the repayment term on your loan ...</option>
+              <option value={1}>1 Year</option>
+              <option value={5}>5 Years</option>
+              <option value={10}>10 Years</option>
+              <option value={15}>15 Years</option>
+              <option value={20}>20 Years</option>
+              <option value={25}>25 Years</option>
+              <option value={30}>30 Years</option>
+            </select>
+          </div>
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Awards, Scholarships, and Grants:</label>
+            <input
+              className="ftrc-form-row-input-text"
+              type="text"
+              placeholder="Input the amount you will recieve in scholarships ..."
+              value={this.state.scholarships}
+              onChange={(e) => this.updateOopCalculatorField("scholarships", e.target.value)} />
+          </div>
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Student Loans:</label>
+            <input
+              className="ftrc-form-row-input-text"
+              type="text"
+              placeholder="Input the amount you will finance with a loan ..."
+              value={this.state.loans}
+              onChange={(e) => this.updateOopCalculatorField("loans", e.target.value)} />
+          </div>
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Interest Rate:</label>
+            <input
+              className="ftrc-form-row-input-text"
+              type="text"
+              placeholder="Input your loan's interest rate ..."
+              value={this.state.interest}
+              onChange={(e) => this.updateOopCalculatorField("interest", e.target.value)} />
+          </div>
+
+          <button
+            onClick={() => this.outputOopCalculation()}>
+            Run Calculation
+          </button>
+
+          {this.renderExpenses()}
+
+          {this.renderRemainder()}
+
+          <table>
+            <tbody>
+              {this.renderRepaymentSchedule()}
+            </tbody>
+          </table>
+
+        </div>
+      );
+    }
+
+  }
+
+  window.onload = function() {
+    ReactDOM.render(
+      <OopCalculator />,
+      document.getElementById('ftrc-oop-calculator')
+    );
+  };
+
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- <div id="ftrc-gpa-calculator"></div>
+
+<style type="text/css">
+  #ftrc-gpa-calculator {
+    display: block;
+    width: 300px;
+    padding: 20px;
+    margin: 40px auto;
+    border: 1px solid #000000;
+  }
+  .ftrc-form-row {
+    display: block;
+    width: 100%;
+    margin: 0 0 20px 0;
+  }
+  .ftrc-form-row-label {
+    display: block;
+    width: 100%;
+    margin: 0 0 5px 0;
+  }
+  .ftrc-form-row-input-select,
+  .ftrc-form-row-input-text {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+</style>
+
+<script type="text/babel">
+
+  class OopCalculator extends React.Component {
+
+    constructor(props) {
+      super(props);
+      this.state = {
+        tuition: 20000,
+        scholarships: 5000,
+        loans: 15000,
+        years: 4,
+        repayment: 5,
+        interestRate: 4.5,
+        remainder: 0,
+        schedule: {}
+      };
+      this.updateOopCalculatorField = this.updateOopCalculatorField.bind(this);
+      this.renderRepayment = this.renderRepayment.bind(this);
+      this.showCalculation = this.showCalculation.bind(this);
+    }
+
+    updateOopCalculatorField(key, value) {
+      value = parseInt(value);
+      let newState = { ...this.state };
+      newState[key] = value;
+      this.setState(newState);
+    }
+
+    showCalculation() {
+      let newState = { ...this.state };
+      newState.schedule = {};
+      for( let i=0; i < newState.repayment; i++) {
+        newState.schedule[i + 1] = this.calculateCompoundingInterest();
+      }
+      newState.remainder = newState.tuition - (newState.scholarships + newState.loans);
+      this.setState(newState);
+    }
+
+    renderRepayment() {
+      let repaymentMarkup = [];
+      for (let key in this.state.schedule) {
+        repaymentMarkup.push(
+          <tr key={"repayment" + key}>
+            <td>Year {key}</td>
+            <td>{(this.state.schedule[key] / Object.keys(this.state.schedule).length).toLocaleString("en-US", {style:"currency", currency:"USD"})}</td>
+          </tr>
+        );
+      }
+            // toLocaleString("en-US", {style:"currency", currency:"USD"});
+            // <td>{Math.ceil(this.state.schedule[key] / Object.keys(this.state.schedule).length * 100) / 100}</td>
+      return repaymentMarkup;
+    }
+
+    calculateCompoundingInterest() {
+      let principal = this.state.loans * this.state.years;
+      let interestRate = this.state.interestRate / 100;
+      let years = this.state.repayment;
+      return (principal * Math.pow(1 + (interestRate/365), 365 * years));
+    }
+
+    render() {
+      return(
+        <div>
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Base Tuition:</label>
+            <input
+              value={this.state.tuition}
+              className="ftrc-form-row-input-text"
+              type="text"
+              onChange={(e) => this.updateOopCalculatorField("tuition", e.target.value)} />
+          </div>
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Number of Years Attending:</label>
+            <select
+              value={this.state.years}
+              className="ftrc-form-row-input-select"
+              onChange={(e) => this.updateOopCalculatorField("years", e.target.value)} >
+              <option value={1}>1 Year</option>
+              <option value={2}>2 Years</option>
+              <option value={3}>3 Years</option>
+              <option value={4}>4 Years</option>
+              <option value={5}>5 Years</option>
+              <option value={6}>6 Years</option>
+            </select>
+          </div>
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Repayment Schedule:</label>
+            <select
+              value={this.state.repayment}
+              className="ftrc-form-row-input-select"
+              onChange={(e) => this.updateOopCalculatorField("repayment", e.target.value)} >
+              <option value={1}>1 Year</option>
+              <option value={5}>5 Years</option>
+              <option value={10}>10 Years</option>
+              <option value={15}>15 Years</option>
+              <option value={20}>20 Years</option>
+              <option value={25}>25 Years</option>
+              <option value={30}>30 Years</option>
+            </select>
+          </div>
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Awards, Scholarships, and Grants:</label>
+            <input
+              value={this.state.scholarships}
+              className="ftrc-form-row-input-text"
+              type="text"
+              onChange={(e) => this.updateOopCalculatorField("scholarships", e.target.value)} />
+          </div>
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Student Loans:</label>
+            <input
+              value={this.state.loans}
+              className="ftrc-form-row-input-text"
+              type="text"
+              onChange={(e) => this.updateOopCalculatorField("loans", e.target.value)} />
+          </div>
+
+          <div className="ftrc-form-row">
+            <label className="ftrc-form-row-label">Interest Rate:</label>
+            <input
+              className="ftrc-form-row-input-text"
+              type="text"
+              value={this.state.interestRate}
+              onChange={(e) => this.updateOopCalculatorField("interestRate", e.target.value)}
+              placeholder="e.g. 4.5" />
+          </div>
+
+          <div className="ftrc-form-row">
+            <div>Total Out-of-Pocket Expenses:</div>
+            {this.state.remainder}
+          </div>
+
+          <button onClick={() => this.showCalculation()}>Calculate!</button>
+
+          <table>
+            <tbody>
+              {this.renderRepayment()}
+            </tbody>
+          </table>
+
+        </div>
+      );
+    }
+
+  }
+
+  window.onload = function() {
+    ReactDOM.render(
+      <OopCalculator />,
+      document.getElementById('ftrc-gpa-calculator')
+    );
+  };
+
+</script> -->

@@ -1,0 +1,367 @@
+<div id="ftrc-gpa-calculator"></div>
+
+<style type="text/css">
+  #ftrc-gpa-calculator {
+    display: block;
+    width: 600px;
+    padding: 20px;
+    margin: 40px auto;
+    border: 1px solid #000000;
+  }
+  .ftrc-errors {
+    color: red;
+  }
+  .ftrc-classes {
+    width: 100%;
+    text-align: left;
+  }
+  .ftrc-form-row {
+    display: block;
+    width: 100%;
+    margin: 0 0 20px 0;
+  }
+  .ftrc-form-row-label {
+    display: block;
+    width: 100%;
+    margin: 0 0 5px 0;
+  }
+  .ftrc-form-row-input-select,
+  .ftrc-form-row-input-text {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .ftrc-gpa-calculator-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+    margin: 0 0 20px 0;
+    grid-column-gap: 20px;
+    grid-row-gap: 20px;
+  }
+  .ftrc-gpa-calculator-form-row {
+    display: block;
+    width: 100%;
+  }
+  .ftrc-gpa-calculator-form-row-label {
+    display: block;
+    width: 100%;
+    margin: 0 0 5px 0;
+  }
+  .ftrc-gpa-calculator-form-row-input-select,
+  .ftrc-gpa-calculator-form-row-input-text {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+</style>
+
+<script type="text/babel">
+
+  class GpaCalculator extends React.Component {
+    
+    constructor(props) {
+      super(props);
+      this.state = {
+        newClass: {
+          name: "",
+          grade: "",
+          gradingSystem: "",
+          credits: ""
+        },
+        classes: [],
+        errors: [],
+        gpa: null
+      };
+      this.addNewClass = this.addNewClass.bind(this);
+      this.renderClasses = this.renderClasses.bind(this);
+      this.calculateGpa = this.calculateGpa.bind(this);
+      this.renderErrors = this.renderErrors.bind(this);
+    }
+
+    renderErrors() {
+      let errors = [];
+      for ( let i=0; i < this.state.errors.length; i++ ) {
+        errors.push(<li key={"error-" + i}>{this.state.errors[i]}</li>);
+      }
+      return errors;
+    }
+
+    validateNumber(value) {
+      if ( !isNaN(parseFloat(value)) && isFinite(value) ) {
+        return true;
+      }
+      else {
+        return false;
+      }
+    }
+
+    validatePresence(value) {
+      if ( value !== "" && value !== null && value !== undefined ) {
+        return true;
+      }
+      else {
+        return false;
+      }
+    }
+
+    addNewClass() {
+      let newState = { ...this.state };
+      newState.errors = [];
+
+      let formIsValid = true;
+
+      if ( !this.validatePresence(newState.newClass.name) ) {
+        formIsValid = false;
+        newState.errors.push("Course name value must be provided.");
+      }
+      if ( !this.validatePresence(newState.newClass.gradingSystem) ) {
+        formIsValid = false;
+        newState.errors.push("Course grading system value must be provided.");
+      }
+      if ( !this.validatePresence(newState.newClass.credits) ) {
+        formIsValid = false;
+        newState.errors.push("Course credits value must be provided.");
+      }
+      if ( !this.validatePresence(newState.newClass.grade) ) {
+        formIsValid = false;
+        newState.errors.push("Course grade value must be provided.");
+      }
+      if ( newState.newClass.gradingSystem === "Traditional GPA" || newState.newClass.gradingSystem === "Percent Grading" ) {
+        if ( !this.validateNumber(newState.newClass.grade) ) {
+          formIsValid = false;
+          newState.errors.push("Course grade value must be a number value.");
+        }
+      }
+
+      if ( !formIsValid ) {
+        this.setState(newState);
+        return;
+      }
+
+      let newClass = {
+        name: newState.newClass.name,
+        grade: newState.newClass.grade,
+        gradingSystem: newState.newClass.gradingSystem,
+        credits: newState.newClass.credits
+      };
+      newState.classes.push(newClass);
+      newState.newClass = {
+        name: "",
+        grade: "",
+        gradingSystem: "",
+        credits: ""
+      };
+      this.setState(newState);
+    }
+
+    updateGpaCalculatorNewClassField(key, value) {
+      let newState = { ...this.state };
+      newState.newClass[key] = value;
+      this.setState(newState);
+    }
+
+    renderClasses() {
+      let classesMarkup = [];
+      for (let i=0; i < this.state.classes.length; i++) {
+        classesMarkup.push(
+          <tr key={"class_" + i}>
+            <td>{this.state.classes[i].name}</td>
+            <td>{this.state.classes[i].gradingSystem}</td>
+            <td style={{"textAlign": "right"}}>{this.state.classes[i].grade}</td>
+            <td style={{"textAlign": "right"}}>{this.state.classes[i].credits}</td>
+          </tr>
+        );
+      }
+      return (
+        <table className="ftrc-classes">
+          <tbody>
+            <tr>
+              <th>Course Name:</th>
+              <th>Grading System:</th>
+              <th style={{"textAlign": "right"}}>Grade:</th>
+              <th style={{"textAlign": "right"}}>Credits:</th>
+            </tr>
+            {classesMarkup}
+          </tbody>
+        </table>
+      );
+    }
+
+    calculateGpa() {
+      let newState = { ...this.state };
+      newState.errors = [];
+
+      if ( newState.classes.length < 1 ) {
+        newState.errors.push("You must input at least one course to calculate a GPA.");
+        this.setState(newState);
+        return;
+      }
+
+      let weight = 0;
+      let gpa = 0;
+      let totalPoints = 0;
+      for ( let j=0; j < this.state.classes.length; j++) {
+        let grade = null;
+        if ( this.state.classes[j].gradingSystem === "Letter Grading" ) {
+          let mapLetterGradeToPercent = {
+            "A+": 100, "A":  96,   "A-": 92,
+            "B+": 89,  "B":  86,   "B-": 82,
+            "C+": 79,  "C":  76,   "C-": 72,
+            "D+": 69,  "D":  66,   "D-": 62,
+            "F":  59
+          };
+          grade = mapLetterGradeToPercent[this.state.classes[j].grade];
+        }
+        else if ( this.state.classes[j].gradingSystem === "Traditional GPA" ) {
+          grade = this.state.classes[j].grade * 25;
+        }
+        else if ( this.state.classes[j].gradingSystem === "Percent Grading" ) {
+          grade = this.state.classes[j].grade;
+        }
+        weight = weight + parseInt(this.state.classes[j].credits);
+        totalPoints = totalPoints + ( grade * this.state.classes[j].credits);
+      }
+      gpa = totalPoints / weight;
+
+      if ( !this.validateNumber(gpa) ) {
+        newState.errors.push("One or more of your courses contains invalid data.");
+        this.setState(newState);
+        return;
+      }
+
+      newState.gpa = gpa;
+      this.setState(newState);
+      return gpa;
+    }
+
+    render() {
+      return(
+        <div>
+
+          {
+            this.state.errors.length > 0 ?
+            <div className="ftrc-errors">
+              <h4>Errors:</h4>
+              <ul>{this.renderErrors()}</ul>
+            </div> :
+            null
+          }
+
+          <div className="ftrc-gpa-calculator-form">
+
+            <div className="ftrc-gpa-calculator-form-row">
+              <label className="ftrc-gpa-calculator-form-row-label">Name:</label>
+              <input
+                className="ftrc-gpa-calculator-form-row-input-text"
+                value={this.state.newClass.name}
+                type="text"
+                placeholder="Input course name, for instance, AP Biology ..."
+                onChange={(e) => this.updateGpaCalculatorNewClassField("name", e.target.value)} />
+            </div>
+
+            <div className="ftrc-gpa-calculator-form-row">
+              <label className="ftrc-gpa-calculator-form-row-label">Grade System:</label>
+              <select
+                className="ftrc-gpa-calculator-form-row-input-text"
+                value={this.state.newClass.gradingSystem}
+                onChange={
+                  (e) => {
+                    this.updateGpaCalculatorNewClassField("grade", "");
+                    this.updateGpaCalculatorNewClassField("gradingSystem", e.target.value);
+                  }
+                }>
+                <option disabled defaultValue value={""}>Select grading system ...</option>
+                <option value={"Percent Grading"}>Percent Grading (0 - 100%)</option>
+                <option value={"Traditional GPA"}>Traditional GPA (0 - 4.0)</option>
+                <option value={"Letter Grading"}>Letter Grading (F - A)</option>
+              </select>
+            </div>
+
+            <div className="ftrc-gpa-calculator-form-row">
+              <label className="ftrc-gpa-calculator-form-row-label">Final Grade:</label>
+              {
+                this.state.newClass.gradingSystem === "Letter Grading" ?
+                <select
+                  className="ftrc-gpa-calculator-form-row-input-select"
+                  value={this.state.newClass.grade}
+                  onChange={(e) => this.updateGpaCalculatorNewClassField("grade", e.target.value)}>
+                  <option disabled defaultValue value={""}>Select letter grade ...</option>
+                  <option value={"A+"}>A+</option>
+                  <option value={"A"}>A</option>
+                  <option value={"A-"}>A-</option>
+                  <option value={"B+"}>B+</option>
+                  <option value={"B"}>B</option>
+                  <option value={"B-"}>B-</option>
+                  <option value={"C+"}>C+</option>
+                  <option value={"C"}>C</option>
+                  <option value={"C-"}>C-</option>
+                  <option value={"D+"}>D+</option>
+                  <option value={"D"}>D</option>
+                  <option value={"D-"}>D-</option>
+                  <option value={"F"}>F</option>
+                </select> :
+                <input
+                  className="ftrc-gpa-calculator-form-row-input-text"
+                  value={this.state.newClass.grade}
+                  type="text"
+                  placeholder="Input grade achieved in this course ..."
+                  onChange={(e) => this.updateGpaCalculatorNewClassField("grade", e.target.value)} />
+              }
+            </div>
+
+            <div className="ftrc-gpa-calculator-form-row">
+              <label className="ftrc-gpa-calculator-form-row-label">Credits:</label>
+              <select
+                className="ftrc-gpa-calculator-form-row-input-select"
+                value={this.state.newClass.credits}
+                onChange={(e) => this.updateGpaCalculatorNewClassField("credits", e.target.value)}>
+                <option disabled defaultValue value={""}>Select hours/credits ...</option>
+                <option value={1}>1</option>
+                <option value={2}>2</option>
+                <option value={3}>3</option>
+                <option value={4}>4</option>
+                <option value={5}>5</option>
+                <option value={6}>6</option>
+              </select>
+            </div>
+
+          </div>
+
+          <button onClick={() => this.addNewClass()}>Add This Class</button>
+
+          <button onClick={() => this.calculateGpa()}>Calculate GPA</button>
+
+          {
+            this.state.gpa ?
+            <div className="ftrc-form-row">
+              <label className="ftrc-form-row-label">GPA:</label>
+              {this.state.gpa}
+            </div> :
+            null
+          }
+
+          { 
+            this.state.classes.length > 0 ?
+            this.renderClasses() :
+            null
+          }
+
+        </div>
+      );
+    }
+
+  }
+
+  window.onload = function() {
+    ReactDOM.render(
+      <GpaCalculator />,
+      document.getElementById('ftrc-gpa-calculator')
+    );
+  };
+
+</script>
+
+
+
+

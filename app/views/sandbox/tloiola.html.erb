@@ -1,0 +1,230 @@
+<div id="planner"></div>
+
+<style type="text/css">
+
+html{
+    color: red;
+}
+td{
+    border: 1px solid black;
+}
+th{
+    border: 1px solid black;
+}
+
+</style>
+<script  type="text/babel">
+
+
+class Planner extends React.Component{
+
+    constructor(props){
+        super(props);
+        this.state = {
+            colleges: [],
+        }
+        this.createColleges = this.createColleges.bind(this);
+        this.createSubHeaders = this.createSubHeaders.bind(this);
+        this.getCollegeKey = this.getCollegeKey.bind(this);
+        this.deleteCollege = this.deleteCollege.bind(this);
+        this.state.colleges.push(this.getCollegeKey());
+        this.addCollege = this.addCollege.bind(this);
+    }
+
+    componentDidMount(){
+        let localStorageCollegesSaved = JSON.parse(localStorage.getItem('data'));
+        if( localStorageCollegesSaved ){
+            this.setState({ colleges: localStorageCollegesSaved });
+            this.createColleges();
+        }
+    }
+
+    componentDidUpdate(){
+        let newState = { ...this.state };
+        localStorage.setItem('data', JSON.stringify( newState.colleges ));
+    }
+
+    getCollegeKey(){
+        return {
+            id: new Date().getTime(),
+            college: '',
+            deadlineDate: '',
+            applicationSubmitted: '',
+            transcriptSubmitted: '',
+            actSatRequired: '',
+            actSatSubmitted: '',
+            recommendationLetterRequired: '',
+            recommendationLetterSubmitted: '',
+            feeRequired: '',
+            feePaid: '',
+            feeDeadline: '',
+            fafsaSubmitted: '',
+            cssRequired: '',
+            cssSubmitted: '',
+        }
+    }
+
+    toReadableEnglish(key){
+        switch(key){
+            case 'college':                         return 'College Name'; break;
+            case 'deadlineDate':                    return 'Deadline'; break;
+            case 'applicationSubmitted':            return '(S) Application'; break;
+            case 'transcriptSubmitted':             return '(S) Transcript'; break;
+            case 'actSatRequired':                  return '(*) ACT/SAT'; break;
+            case 'actSatSubmitted':                 return '(S) ACT/SAT'; break;
+            case 'recommendationLetterRequired':    return '(*) Recommendation Letter'; break;
+            case 'recommendationLetterSubmitted':   return '(S) Recommendation Letter'; break;
+            case 'feeRequired':                     return '(*) Fee'; break;
+            case 'feePaid':                         return 'Fee Paid'; break;
+            case 'feeDeadline':                     return 'Fee Deadline'; break;
+            case 'fafsaSubmitted':                  return '(S) FAFSA'; break;
+            case 'cssRequired':                     return '(*) CSS'; break;
+            case 'cssSubmitted':                    return '(S) CSS'; break;
+        }
+    }
+
+    createSubHeaders(key){
+        switch(key){
+            case 'college':                         return 'Name'; break;
+            case 'deadlineDate':                    return 'Date'; break;
+            case 'applicationSubmitted':            return 'Submitted'; break;
+            case 'transcriptSubmitted':             return 'Submitted'; break;
+            case 'actSatRequired':                  return '(*) ACT/SAT'; break;
+            case 'actSatSubmitted':                 return '(S) ACT/SAT'; break;
+            case 'recommendationLetterRequired':    return '(*) Recommendation Letter'; break;
+            case 'recommendationLetterSubmitted':   return '(S) Recommendation Letter'; break;
+            case 'feeRequired':                     return '(*) Fee'; break;
+            case 'feePaid':                         return 'Fee Paid'; break;
+            case 'feeDeadline':                     return 'Fee Deadline'; break;
+            case 'fafsaSubmitted':                  return '(S) FAFSA'; break;
+            case 'cssRequired':                     return '(*) CSS'; break;
+            case 'cssSubmitted':                    return '(S) CSS'; break;
+        }
+    }
+
+    getInputTags(key, id, value){
+        switch(key){ 
+            case 'college':                         return <input onChange={(e) => this.handleChange( key, id, e.target.value)} type='text' value = { value } />; break;
+            case 'deadlineDate':                    return <input onChange={(e) => this.handleChange( key, id, e.target.value)} type='date' value = { value } />; break;
+            case 'applicationSubmitted':            return <input onChange={(e) => this.handleChange( key, id, e.target.checked)} type='checkbox' checked = { value } />; break;
+            case 'transcriptSubmitted':             return <input onChange={(e) => this.handleChange( key, id, e.target.checked)} type='checkbox'  checked = { value } />; break;
+            case 'actSatRequired':                  return <input onChange={(e) => this.handleChange( key, id, e.target.checked)} type='checkbox' checked = { value } />; break;
+            case 'actSatSubmitted':                 return <input onChange={(e) => this.handleChange( key, id, e.target.checked)} type='checkbox' checked = { value } />; break;
+            case 'recommendationLetterRequired':    return <input onChange={(e) => this.handleChange( key, id, e.target.checked)} type='checkbox' checked = { value } />; break;
+            case 'recommendationLetterSubmitted':   return <input onChange={(e) => this.handleChange( key, id, e.target.checked)} type='checkbox' checked = { value } />; break;
+            case 'feeRequired':                     return <input onChange={(e) => this.handleChange( key, id, e.target.checked)} type='checkbox' checked = { value } />; break;
+            case 'feePaid':                         return <input onChange={(e) => this.handleChange( key, id, e.target.checked)} type='checkbox' checked = { value } />; break;
+            case 'feeDeadline':                     return <input onChange={(e) => this.handleChange( key, id, e.target.value)} type='date' value = { value } />; break;
+            case 'fafsaSubmitted':                  return <input onChange={(e) => this.handleChange( key, id, e.target.checked)} type='checkbox' checked = { value } />; break;
+            case 'cssRequired':                     return <input onChange={(e) => this.handleChange( key, id, e.target.checked)} type='checkbox' checked = { value } />; break;
+            case 'cssSubmitted':                    return <input onChange={(e) => this.handleChange( key, id, e.target.checked)} type='checkbox' checked = { value } />; break;
+            }
+    }
+
+    createHeaders(){
+        let headers = [];
+        let collegeKey = this.getCollegeKey();
+        for( let key in collegeKey ){
+            if( key !== 'id' ){
+                headers.push(<th key = {headers.length}>{this.toReadableEnglish(key)}</th>);
+            }
+        }
+        headers.push(<th key={headers.length++}>Action</th>)
+        return <tr>{ headers }</tr>
+    }
+
+    createSubHeaders(){
+        let subHeaders = [];
+        let collegeKey = this.getCollegeKey();
+        for( let key in collegeKey ){
+            if( key === 'college' ){
+                subHeaders.push(<th key = {subHeaders.length}>{this.createSubHeaders(key)}</th>);
+            }
+        }
+        subHeaders.push(<th key={subHeaders.length++}>Action</th>)
+        return <tr>{ subHeaders }</tr>
+    }
+
+    createForms(){
+        let forms = [];
+        let collegeKey = this.getCollegeKey();
+        for( let key in collegeKey ){
+            if( key !== 'id' ){
+                forms.push(<td key = {forms.length}>{this.getInputTags(key)}</td>);
+            }
+        }
+        forms.push(<td key={forms.length++}><button onClick={()=>removeColege()}>Remove</button></td>)
+        
+        return <tr>{forms}</tr>
+    }
+
+    createColleges(){
+        let newState = { ...this.state };
+        let allColleges = [];
+        for( let i = 0; i < newState.colleges.length; i++){
+            let college = [];
+            for( let key in newState.colleges[i] ){
+                if( key !== 'id' ){
+                college.push( <td key={ college.length }>{this.getInputTags(key , newState.colleges[i].id, newState.colleges[i][key] )}</td>)
+                }
+            }
+            college.push( <td key={ college.length }><button onClick={()=>this.deleteCollege(newState.colleges[i].id)}>Delete</button></td> );
+            allColleges.push(<tr key={ allColleges.length }>{college}</tr>);
+        };
+        return allColleges;
+    }
+
+    addCollege(){
+        let newState = {...this.state};
+        newState.colleges.push(this.getCollegeKey());
+        this.setState( newState );
+        localStorage.setItem('data', JSON.stringify( newState.colleges ));
+    }
+    
+    deleteCollege(collegeId){
+        let newState = { ...this.state };
+        console.log( newState.colleges );
+
+        for( let i = 0; i < newState.colleges.length; i++ ){
+            if( newState.colleges[i].id === collegeId ){
+                console.log( newState.colleges[i] )
+                newState.colleges.splice( i, 1 );
+                this.setState( newState );
+            }
+        }
+    }
+    
+    handleChange(key, collegeId, value){
+        let newState = { ...this.state };
+        for( let i = 0; i < newState.colleges.length; i++ ){
+            if(newState.colleges[i].id === collegeId ){
+                newState.colleges[i][key] = value;
+            }
+        }
+        this.setState( newState );
+    }
+       
+    render(){
+        return (
+            <div>
+                <table>
+                    <thead>
+                        { this.createHeaders() }
+                    </thead>
+                    <tbody>
+                        { this.createColleges() }
+                    </tbody>
+                </table>
+                <button onClick={this.addCollege} value='submit'>Add College</button>
+            </div>
+        )
+    }
+};
+
+
+window.onload = function(){
+    ReactDOM.render(<Planner />, document.getElementById('planner'))
+}
+
+</script>
+
