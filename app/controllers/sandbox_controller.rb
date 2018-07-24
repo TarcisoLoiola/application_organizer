@@ -8,9 +8,6 @@ class SandboxController < ApplicationController
 
   def planner
   end
-  
-  def organizer
-  end
 
   def tloiola
   end 

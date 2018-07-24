@@ -35,7 +35,6 @@ class Planner extends React.Component{
         let localStorageCollegesSaved = JSON.parse(localStorage.getItem('data'));
         if( localStorageCollegesSaved ){
             this.setState({ colleges: localStorageCollegesSaved });
-            this.createColleges();
         }
     }
 
