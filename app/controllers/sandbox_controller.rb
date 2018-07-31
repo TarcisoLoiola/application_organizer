@@ -9,7 +9,7 @@ class SandboxController < ApplicationController
   def planner
   end
 
-  def tloiola
+  def loancalculator
   end 
   
 end

@@ -1,0 +1,507 @@
+<div id='ftrc-oop-calculator'></div>
+
+<style type='text/css'>
+  #ftrc-oop-calculator {
+    display: block;
+    width: 300px;
+    padding: 20px;
+    margin: 40px auto;
+    border: 1px solid #000000;
+  }
+  .ftrc-errors {
+    color: red;
+  }
+  .ftrc-form-row {
+    display: block;
+    width: 100%;
+    margin: 0 0 20px 0;
+  }
+  .ftrc-form-row-label {
+    display: block;
+    width: 100%;
+    margin: 0 0 5px 0;
+  }
+  .ftrc-form-row-input-select,
+  .ftrc-form-row-input-text {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  /* p{
+    text-align: justify;
+    text-justify: inter-word;
+  } */
+</style>
+
+<script type='text/babel'>
+class OopCalculator extends React.Component {
+
+    //CONSTRUCTOR
+    constructor( props ){
+        super( props );
+        this.state = {
+            inputField: '',
+            errors: [],
+            expenses: null,
+            remainder: null,
+            repaymentSchedule: {},
+        };
+        // this.createLabelsAndInput = this.createLabelsAndInput.bind(this);
+        // this.inputFieldsOBJ = this.inputFieldsOBJ.bind(this);
+        // this.getPlaceholder = this.getPlaceholder.bind(this);
+        // this.handleErrors = this.handleErrors.bind(this);
+        this.calculateExpensesAndRemainder = this.calculateExpensesAndRemainder.bind(this);
+        this.state.inputField = this.inputFieldsOBJ();//Must not be commented out
+    };
+
+    //REACT LIFECICLE NETHOD
+    componentWillUpdate(){
+        
+    }
+
+    //INPUT OBJECT
+    inputFieldsOBJ(){
+        return{
+            tuition: 15000,
+            boarding: 1000,
+            activities: 1000,
+            healthcare: 1000,
+            travel: 1000,
+            other: 1000,
+            yearsAttending: 4,
+            repaymentYears: 5,
+            scholarships: 4000,
+            loans: 15000,
+            loanType: '',
+            interest: 4.5
+        }
+    };
+
+    //BEGINING of my validation inputs
+    handleErrors() {
+        let errors = [];
+        for ( let i=0; i < this.state.errors.length; i++ ) {
+            errors.push(<li key={ errors.length }>{this.state.errors[i]} must be validate.</li>);
+        }
+        if ( errors.length > 0  ){
+            return (
+            <div className="ftrc-errors">
+                <h4>Errors:</h4>
+                <ul>{ errors }</ul>
+            </div>
+            )
+        }
+    }
+
+    validatePresence( value ) {
+        if ( value !== "" && value !== null && value !== undefined ) {
+            return true;
+        }
+        else {
+            return false;
+        };
+    };
+
+    validateNumber( value ) {
+        if ( !isNaN(parseFloat(value)) && isFinite(value) ) {
+            return true;
+        }
+        else {
+            return false;
+        };
+    };
+    
+    validateInput() {
+        let newState = this.state;
+        newState.errors = [];
+        let formIsValid = true;
+        for( let key in newState.inputField ){
+            if( !key == 'loanType' ){
+                if( !this.validatePresence( newState.inputField[ key ]) || !this.validateNumber( newState.inputField[ key ])){
+                    formIsValid = false;
+                    newState.errors.push( this.getToEnglishReadable( key ));
+                    this.setState( newState );
+                }
+            }
+            else {
+                if( !this.validatePresence( newState.inputField[ key ])){
+                    formIsValid = false;
+                    newState.errors.push( this.getToEnglishReadable( key ));
+                    this.setState( newState );
+                };
+            };
+        };
+        return formIsValid;
+    };
+    //END of validating fields
+
+    //BEGINING of all my calculation
+    calculate(){
+        //All input fields will be validate before run calculation
+        if( this.validateInput() ){
+
+            this.calculateExpensesAndRemainder();
+
+            let newState = this.state;
+            newState.repaymentSchedule = {};
+
+
+            let principal       = newState.inputField.loans * newState.inputField.yearsAttending;
+            let payments        = newState.inputField.repaymentYears * 12;
+            let interestRate    = newState.inputField.interest / 100 / 12;
+            let pow             = ( Math.pow(1 + interestRate, payments ));
+            // let pow             = (Math.pow(1 + interestRate, payments));
+            let monthly  = (( principal * pow * interestRate )/( pow-1 ));
+            //check for Loan based on Loan Type
+            if( newState.inputField.loanType === "traditional" ){
+                //Compound Interest
+                interestRate    = newState.inputField.interest / 100;
+                monthly         = ((principal * Math.pow(1 + (interestRate/365), 365 * newState.inputField.repaymentYears)) / newState.inputField.repaymentYears) / 12;
+            }
+            //check for Loan Amount based on Loan Type
+            if( newState.inputField.loanType === "unsubsidized-deferred-int"){
+                interestRate            = newState.inputField.interest / 100;
+                let interestPrincipal   = principal * Math.pow(1 + (interestRate/12),  12 * newState.inputField.yearsAttending);
+                monthly                 = (( interestPrincipal * pow * interestRate)/( pow-1 )) / 12;
+            }
+            //create repayment Schedule
+            for( let i = 1; i <= newState.inputField.repaymentYears; i++) {
+                newState.repaymentSchedule[ i ] = monthly * 12;
+            }
+
+            this.setState( newState );  
+        };
+    };
+
+    calculateExpensesAndRemainder(){
+        let newState = this.state;
+        let expenses = 0;
+        let remainder = 0;
+        for( let key in newState.inputField ){
+            if( key === 'tuition' || key === 'boarding' || key === 'activities' || key === 'healthcare' || 
+            key === 'travel' ||  key === 'other' )
+            {
+                expenses += parseInt( newState.inputField[ key ]);
+            };
+            if( key === 'scholarships' || key === 'loans' ){
+                remainder += parseInt( newState.inputField[ key ]);
+            };
+        };
+        newState.expenses = expenses;
+        newState.remainder = expenses - remainder;
+
+        this.setState( newState );
+    }
+    //END of all my calculation
+
+    //BEGINING of create view labels and inputs
+    createLabelsAndInput(){                                         
+        let inputNewState = this.state.inputField;
+        let labelsAndInput = [];                    
+        for( let key in inputNewState ){ 
+            let value = inputNewState[ key ];
+            switch( key ){
+                case 'tuition':
+                case 'boarding':
+                case 'activities':
+                case 'healthcare':
+                case 'travel':
+                case 'other':
+                case 'scholarships':
+                case 'loans':
+                case 'interest':
+                labelsAndInput.push(
+                    <div key ={ labelsAndInput.length } className='ftrc-form-row'>
+                        <label className='ftrc-form-row-label'>
+                            { this.getToEnglishReadable( key )}:
+                        </label>
+                        <input
+                        className = 'ftrc-form-row-input-text'
+                        type = 'number'
+                        value = { value }
+                        placeholder = { this.getPlaceholder( key ) }
+                        onChange = {(e) => this.handleChange( key, e.target.value )}
+                        />
+                    </div>   
+                ); break;
+                case 'yearsAttending':
+                labelsAndInput.push(
+                    <div key = { labelsAndInput.length } className='ftrc-form-row'>
+                        <label className='ftrc-form-row-label'>
+                            { this.getToEnglishReadable( key )}:
+                        </label>
+                        { this.getSelectField( key, value, 6, 1 ) }{/* 6 is the length of college attending, 1 is a mod to be calculate in a for loop line 275*/}
+                    </div> 
+                ); break;
+                case 'repaymentYears':
+                labelsAndInput.push(
+                    <div key = { labelsAndInput.length } className='ftrc-form-row'>
+                        <label className='ftrc-form-row-label'>
+                            { this.getToEnglishReadable( key )}:
+                        </label>
+                        { this.getSelectField( key, value, 30, 5 ) }{/* 30 is the length of loan term, 5 is a mod to be calculate in a for loop line 275*/}
+                    </div> 
+                ); break;
+                case 'loanType':
+                labelsAndInput.push(
+                    <div key = { labelsAndInput.length } className='ftrc-form-row'>
+                        <label className='ftrc-form-row-label'>
+                            { this.getToEnglishReadable( key )}:
+                        </label>
+                        <select
+                        className = 'ftrc-form-row-input-select'
+                        type = 'text'
+                        value = { value }
+                        onChange = {(e) => this.handleChange( key, e.target.value )}>
+                        <option disabled defaultValue value={''}>Select your loan type ...</option>
+                        <option value = { 'subsidized' }>Direct Subsidized Loan</option>
+                        <option value = { 'unsubsidized-deferred-int' }>Direct Unsubsidized - defer interest payments</option>
+                        <option value = { 'unsubsidized-paid-int' }>Direct Unsubsidized - pay interest while in school</option>
+                        <option value = { 'perkins' }>Perkins Loan</option>
+                        <option value = { 'traditional' }>Traditional Loan</option>
+                        </select>
+                    </div> 
+                ); break;
+                default: break;
+            }
+        }
+        return labelsAndInput;
+    }
+
+    getSelectField( key, value, length, mod ){
+        let select = [];
+        for ( let i = 1; i <= length; i++ ){
+            if( i === 1 || i % mod === 0 ){
+                select.push( <option key = { i } value = { i }>{ i } Year</option> )
+            }
+        }
+        return <select
+              className="ftrc-form-row-input-select"
+              value={ value }
+              type = 'number'
+              onChange = {(e) => this.handleChange( key, e.target.value )}>>
+              <option disabled defaultValue value = {""}> { this.getPlaceholder( key ) }</option>
+              { select }
+            </select>
+
+    }
+
+    getToEnglishReadable( key ){
+        switch( key ) {
+            case 'tuition':         return 'Base Tuition'; break;
+            case 'boarding':        return 'Room & Board'; break;
+            case 'activities':      return 'Activities Fee'; break;
+            case 'healthcare':      return 'Healthcare Fee'; break;
+            case 'travel':          return 'Travel Expenses'; break;
+            case 'other':           return 'Other Expenditures'; break;
+            case 'yearsAttending':  return 'Number of Years Attending'; break;
+            case 'repaymentYears':  return 'Repayment Schedule'; break;
+            case 'scholarships':    return 'Awards, Scholarships, and Grants'; break;
+            case 'loans':           return 'Student Loans (annually)'; break;
+            case 'loanType':        return 'Loan Type'; break;
+            case 'interest':       return 'Interest Rate'; break;
+            default: break;
+        };
+    };
+
+    getPlaceholder( key ){
+         switch( key ) {
+            case 'tuition':         return 'Input annual base tuition ...'; break;
+            case 'boarding':        return 'Input room & board fee ...'; break;
+            case 'activities':      return 'Input activites fee ...'; break;
+            case 'healthcare':      return 'Input healthcare fee ...'; break;
+            case 'travel':          return 'Input travel expenses ...'; break;
+            case 'other':           return 'Input any other related expenditures ...'; break;
+            case 'yearsAttending':  return 'Select the number of years you plan to attend college ...'; break;
+            case 'repaymentYears':  return 'Select the repayment term on your loan ...Repayment Schedule:'; break;
+            case 'scholarships':    return 'Input the amount you will recieve in scholarships ...'; break;
+            case 'loans':           return 'Input the amount you will finance with a loan ...'; break;
+            case 'loanType':        return 'Select the type of loan type...'; break;
+            case 'interest:':       return 'Input your loans interest rate ...'; break;
+            default: break;
+        };
+    };
+    //END of create view labels and inputs
+
+    //BEGINING of redering loan tips
+    renderLoanTips() {
+        let key = this.state.inputField.loanType;
+        switch( key ) {
+            case 'traditional':
+                return(
+                    <div>
+                        <h3>Tips on Traditional Loans</h3>
+                        <p>
+                            For Traditional Loans, which are usually through private lenders, the interest compounds daily, 
+                            monthly, or annually, which typically generates higher interest on your loan.
+                            Student loan interest starts accruing the day you take out your loan.
+                        </p>
+                    </div>
+                );
+            break;
+            case 'subsidized':
+                return(
+                    <div>
+                        <h3>Tips on Subsidized Loans for Undergraduate Borrowers</h3>
+                        <p>
+                            Interest rates for federal student loans are set by Congress each year and can change. 
+                            The rate above for this loan type is for 2018-2019. Student loan interest starts accruing 
+                            the day you take out your loan, however, for Federal Direct Subsidized Loans The U.S. 
+                            Department of Education pays the interest:
+                        </p>
+                        <ul>
+                            <li>while you're in school at least half-time;</li>
+                            <li>for the first six months after you leave school (referred to as a grace period);</li>
+                            <li>and during any period of deferment.</li>
+                        </ul>
+                    </div>
+                );
+            break;
+            case 'unsubsidized-paid-int':
+                return(
+                    <div>
+                        <h3>Tips on Unsubsidized Loans for Undergraduate Borrowers (paying interest while in school)</h3>
+                        <p>
+                            Interest rates for federal student loans are set by Congress each year and can change. 
+                            The rate above for this loan type is for 2018-2019. Student loan interest starts accruing 
+                            the day you take out your loan. For Federal Direct Unsubsidized Loans, If you don't make 
+                            interest-only payments while in school, the accrued interest capitalizes and is added to 
+                            your principal. This calculation assumes that interest is being paid while you're in school.
+                        </p>
+                    </div>
+                );
+            break;
+            case 'unsubsidized-deferred-int':
+                return(
+                    <div>
+                        <h3>Tips on Unsubsidized Loans for Undergraduate Borrowers (deferring interest payments while in school)</h3>
+                        <p>
+                            Interest rates for federal student loans are set by Congress each year and can change. The rate above 
+                            for this loan type is for 2018-2019. Student loan interest starts accruing the day you take out your loan. 
+                            For Federal Direct Unsubsidized Loans, If you don't make interest-only payments while in school, 
+                            the accrued interest capitalizes and is added to your principal. This calculation assumes that you 
+                            are not paying interest while you are in school.
+                        </p>
+                    </div>
+
+                );
+            break;
+            case 'perkins':
+                return (
+                    <div>
+                        <h3>Tips on Perkins Loans</h3>
+                        <p>
+                            Interest rates for federal student loans are set by Congress each year and can change. The rate above for this 
+                            loan type is for 2018-2019. Student loan interest starts accruing the day you take out your loan, however, 
+                            for Federal Perkins Loans The U.S. Department of Education pays the interest:
+                        </p>
+                        <ul>
+                            <li>while you're in school at least half-time;</li>
+                            <li>for the first six months after you leave school (referred to as a grace period);</li>
+                            <li>and during any period of deferment.</li>
+                        </ul>
+                    </div>
+                )
+            break;
+            default:
+            break;
+        }
+    }
+    //END of rendering loan tips
+
+    //BEGINING of rendering repayment schedule
+    renderExpenses(){
+        if ( this.state.expenses ){
+            return (
+                <div className = "ftrc-form-row" >
+                    <hr />
+                    <div>Yearly Total Expenses:</div>
+                    { this.state.expenses.toLocaleString( "en-US", {style:"currency", currency:"USD" }) }
+                </div>
+            )
+        };
+    };
+
+    renderRemainder(){
+        if ( this.state.remainder ){
+            return (
+                <div className = "ftrc-form-row" >
+                    <div> Yearly Out of Pocket Remainder:</div>
+                    { this.state.remainder.toLocaleString( "en-US", {style:"currency", currency:"USD" }) }
+                </div>
+            )
+        }
+    };
+
+    renderRepaymentSchedule() {
+        let repaymentMarkup = [];
+            for ( let key in this.state.repaymentSchedule ) {
+                repaymentMarkup.push(
+                    <tr key = { repaymentMarkup.length }>
+                        <td>Year { key }</td>
+                        <td>{ this.state.repaymentSchedule[ key ].toLocaleString( "en-US", {style:"currency", currency:"USD" }) }</td>
+                    </tr>
+                );
+            };
+            return(
+                <table>
+                    <tbody>
+                        { repaymentMarkup }
+                    </tbody>
+                </table>
+            );
+        
+    };
+    //END of rendering repayment schedule
+
+    // HANDLECHANGE function
+    handleChange( key, value ){
+        let newState = this.state;
+        //Statement to update interest based on loan type.
+        if( key === 'loanType'){
+            if( value === 'perkins' ){
+                newState.inputField.interest = 5;
+            }
+            if( value === "subsidized" || value === "unsubsidized-deferred-int" || value === "unsubsidized-paid-int" ){
+                newState.inputField.interest = 5.05;
+            }
+            if( value === 'traditional' ){
+                newState.inputField.interest = 4.5;
+            }
+        }
+        newState.inputField[ key ] = value;
+        this.setState( newState );
+    }
+
+    //RENDER METHOD
+    render(){
+        return(
+            <div>
+
+                { this.handleErrors() }
+
+                { this.createLabelsAndInput() }
+
+                {/*{ this.renderLoanTips() }*/}
+
+                <button onClick = {() => this.calculate() }>Calculate</button>
+
+                { this.renderExpenses() }
+                { this.renderRemainder() }
+                { this.renderRepaymentSchedule()  }
+
+            </div>
+
+        );
+    };
+};
+
+//Function to render to the DOM react class
+window.onload = function () {
+    ReactDOM.render(
+        <OopCalculator />,
+        document.getElementById( 'ftrc-oop-calculator' )
+    );
+};
+
+</script>
